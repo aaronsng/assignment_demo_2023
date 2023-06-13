@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 	"time"
 
-	"github.com/TikTokTechImmersion/assignment_demo_2023/http-server/kitex_gen/rpc"
-	"github.com/TikTokTechImmersion/assignment_demo_2023/http-server/kitex_gen/rpc/imservice"
-	"github.com/TikTokTechImmersion/assignment_demo_2023/http-server/proto_gen/api"
+	"github.com/aaronsng/assignment_demo_2023/http-server/kitex_gen/rpc"
+	"github.com/aaronsng/assignment_demo_2023/http-server/kitex_gen/rpc/imservice"
+	"github.com/aaronsng/assignment_demo_2023/http-server/proto_gen/api"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/utils"
@@ -19,6 +21,12 @@ import (
 var cli imservice.Client
 
 func main() {
+	// The URL locating the RPC server is located through here.
+	// When the HTTP server is first launched, Kubernetes / Docker would
+	// load an environment variable specifying the URL of the RPC service
+	rpcUrl := os.Getenv("RPC_URL")
+	fmt.Println("RPC_URL + " + rpcUrl)
+
 	r, err := etcd.NewEtcdResolver([]string{"etcd:2379"})
 	if err != nil {
 		log.Fatal(err)
@@ -26,13 +34,13 @@ func main() {
 	cli = imservice.MustNewClient("demo.rpc.server",
 		client.WithResolver(r),
 		client.WithRPCTimeout(1*time.Second),
-		client.WithHostPorts("rpc-server:8888"),
+		client.WithHostPorts(rpcUrl+":8888"),
 	)
 
 	h := server.Default(server.WithHostPorts("0.0.0.0:8080"))
 
 	h.GET("/ping", func(c context.Context, ctx *app.RequestContext) {
-		ctx.JSON(consts.StatusOK, utils.H{"message": "pong"})
+		ctx.JSON(consts.StatusOK, utils.H{"message": "po`n`g"})
 	})
 
 	h.POST("/api/send", sendMessage)
